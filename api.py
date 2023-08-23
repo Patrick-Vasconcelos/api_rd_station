@@ -2,6 +2,7 @@ import requests
 from abc import abstractmethod, ABC
 import logging
 import pandas as pd
+import datetime
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -35,8 +36,9 @@ class Rd_api:
         response = pd.json_normalize(response)
         print(response['deals'])
     
-    def put_data(self,nome_paciente : str, value_indicacao : str,data_indicacao : str, label_indicacao : str = '64e4c19a2c71dd000e03ead5',
-                 label_data_indicacao : str = "64e4abda173a72001acc99ff", label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" , **kwargs) -> None:
+    def put_data(self,nome_paciente : str, value_indicacao : str,data_indicacao : str, value_sexo :str, label_indicacao : str = '64e4c19a2c71dd000e03ead5',
+                 label_data_indicacao : str = "64e4abda173a72001acc99ff", label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" , 
+                 label_sexo : str = "64e63eac51f84c0018a09ac6", **kwargs) -> None:
 
         endpoint = self._get_endpoint(**kwargs)
 
@@ -49,11 +51,29 @@ class Rd_api:
             {
                 "custom_field_id": f"{label_data_indicacao}",
                 "value": f"{data_indicacao}"
+            },
+            {
+                "custom_field_id": f"{label_sexo}",
+                "value": f"{value_sexo}"
             }
         ],
         "deal_stage_id": f"{label_fase_lead}",
         "name": f"{nome_paciente}"
-        } }
+        }, "contacts": [
+        {
+            "birthday": {
+                "day": 1,
+                "month": 12,
+                "year": 1998
+            },
+            "phones": [
+                {
+                    "type": "cellphone",
+                    "phone": "85999999"
+                }
+            ]
+        }
+    ]}
         headers = {
         "accept": "application/json",
         "content-type": "application/json"
