@@ -1,2 +1,4 @@
-venv
+.venv
 token.txt
+__pycache__/
+venv
