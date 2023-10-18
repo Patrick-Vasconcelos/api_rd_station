@@ -27,7 +27,7 @@ logging.basicConfig(filename='ingestao.log', level=logging.INFO, format='%(ascti
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 SMTP_USER = '89patrick89@gmail.com'
-SMTP_PASSWORD = 'Kcirtap!00'
+SMTP_PASSWORD = 
 TO_EMAIL = 'patrickvasc@qorpo.com.br'
 FROM_EMAIL = '89patrick89@gmail.com'
 
