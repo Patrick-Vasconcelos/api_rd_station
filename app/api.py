@@ -73,7 +73,7 @@ class GetDeals(Rd_api):
     
     def get_data(self, **kwargs) -> dict:
         endpoint = self._get_endpoint(**kwargs)
-        logger.info(f"Getting data from endpoint: {endpoint}")
+        api_logger.info(f"Getting data from endpoint: {endpoint}")
         
         headers = {
         "accept": "application/json"
