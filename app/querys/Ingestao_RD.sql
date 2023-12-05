@@ -31,6 +31,8 @@ FROM cte_indicacao as indicacao
 LEFT JOIN sisac.dbo.CadPaciente as paciente ON indicacao.CodPaciente = paciente.CodPaciente
 LEFT JOIN sisac.dbo.CadMedico as medico ON indicacao.CodMedico = medico.CodMedico
 
-WHERE DataIndicacao >= DATEADD(DAY, -1, CAST(GETDATE() AS DATE))
-      AND DataIndicacao < CAST(GETDATE() AS DATE)
+ -- DATEADD(DAY, -1, CAST(GETDATE() AS DATE))
+ --      AND DataIndicacao < CAST(GETDATE() AS DATE)
 
+
+WHERE DataIndicacao = DATEADD(DAY, -1, CAST(GETDATE() AS DATE))

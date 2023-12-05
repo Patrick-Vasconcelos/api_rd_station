@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from os import getenv
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.mime.multipart import MIMEMultipart 
 import time
 
 
@@ -23,13 +23,6 @@ api_logger.addHandler(file_handler)
 api_logger.addHandler(console_handler)
 logging.basicConfig(filename='ingestao.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-#configurando o envio de email
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_USER = '89patrick89@gmail.com'
-SMTP_PASSWORD = 'Kcirtap!00'
-TO_EMAIL = 'patrickvasc@qorpo.com.br'
-FROM_EMAIL = '89patrick89@gmail.com'
 
 
 def import_query(path):
@@ -73,7 +66,6 @@ class GetDeals(Rd_api):
     
     def get_data(self, **kwargs) -> dict:
         endpoint = self._get_endpoint(**kwargs)
-        logger.info(f"Getting data from endpoint: {endpoint}")
         
         headers = {
         "accept": "application/json"
@@ -85,11 +77,20 @@ class GetDeals(Rd_api):
         print(response['deals'])
 
 class PutDeals(Rd_api):
+    
 
     def __init__(self) -> None:
         super().__init__()
 
     def envia_email_erro(mensagem):
+        email_user = getenv('email_user')
+        email_pass = getenv('email_pass')
+        SMTP_SERVER = 'smtp.gmail.com'
+        SMTP_PORT = 587
+        SMTP_USER = email_user
+        SMTP_PASSWORD = email_pass
+        TO_EMAIL = 'patrickvasc@qorpo.com.br'
+        FROM_EMAIL = email_user
         subject = "Erro na ingestão de dados"
         message = MIMEMultipart()
         message['From'] = FROM_EMAIL
@@ -188,14 +189,13 @@ class PutDeals(Rd_api):
         senha = getenv('senha_DW')
 
         try:
-            usuario = 'bug'
             db_logger.info("Tentando conectar ao banco...")
             conexao, cursor = self.conecta_ao_banco(username=usuario,password=senha)
             db_logger.info("Sucesso ao conectar ao banco de dados!")
         except Exception as e:
-            erro_msg = f"Erro ao conectar ao banco de dados : {str(e)}"
-            db_logger.error(erro_msg)
-            self.envia_email_erro(mensagem=erro_msg)
+            erro_msg_conecta_banco = f"Erro ao conectar ao banco de dados : {str(e)}"
+            db_logger.error(erro_msg_conecta_banco)
+            self.envia_email_erro(mensagem=erro_msg_conecta_banco)
 
 
         try:
@@ -203,10 +203,12 @@ class PutDeals(Rd_api):
             consulta = self.consulta_ao_banco(query=nome, conexao=conexao)
             db_logger.info("Sucesso ao fazer a consulta!")
         except Exception as e:
-            db_logger.error(f"Erro ao realizar a consulta no banco : {str(e)}")
+            erro_msg_consulta_banco = f"Erro ao realizar a consulta no banco : {str(e)}"
+            db_logger.error(erro_msg_consulta_banco)
+            self.envia_email_erro(mensagem=erro_msg_consulta_banco)
 
-
-        conexao.close()
+        if conexao is not None:
+            conexao.close()
 
         return consulta
     
@@ -214,8 +216,13 @@ class PutDeals(Rd_api):
         list_deals = self.get_list(self)
 
         for i, deal in list_deals.iterrows():
-            self.put_data(self,nome_paciente=deal['Paciente'], value_indicacao= deal['Nome'],data_indicacao= deal['DataIndicacao'],
-                            value_sexo=deal['Sexo'],value_data_nascimento_txt=deal['DataNascimento'],value_contato=deal['Contato'],value_quadro_clinico=deal['Indicacao']
+            self.put_data(self,nome_paciente=deal['Paciente'],
+                                value_indicacao= deal['Nome'],
+                                data_indicacao= deal['DataIndicacao'],
+                                value_sexo=deal['Sexo'],
+                                value_data_nascimento_txt=deal['DataNascimento'],
+                                value_contato=deal['Contato'],
+                                value_quadro_clinico=deal['Indicacao']
                             )
     
     def conecta_ao_banco(driver= 'ODBC Driver 17 for SQL Server', server= '192.168.10.63', database = 'SISAC', username=None,password=None,trusted_connection='no'):

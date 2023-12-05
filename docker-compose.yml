@@ -1,0 +1,32 @@
+services:
+  pgdatabase:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER = root
+      - POSTGRES_PASSWORD = root
+      - POSTGRES_DB = leads_rd
+    volumes:
+      - .:/app:rw
+
+    ports:
+      - 5432:5432
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - .:/app
+    ports:
+      - 8081:80
+  jenkins:
+    image: jenkins/jenkins:lts
+    privileged: true
+    user: root
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:/var/run/docker
+      - ./jenkins_home:/var/jenkins_home

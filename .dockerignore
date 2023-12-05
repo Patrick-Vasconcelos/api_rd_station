@@ -2,4 +2,3 @@ venv
 token.txt
 __pycache__/
 ingestao.log
-jenkins_home
