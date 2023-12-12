@@ -6,7 +6,7 @@ services:
       - POSTGRES_PASSWORD = root
       - POSTGRES_DB = leads_rd
     volumes:
-      - .:/app:rw
+      - postgres_data:/var/lib/postgres/data
 
     ports:
       - 5432:5432
@@ -28,5 +28,16 @@ services:
       - 8080:8080
       - 50000:50000
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:/var/run/docker
-      - ./jenkins_home:/var/jenkins_home
+      - jenkins_home:/var/jenkins_home
+    python_app:
+      build:
+        context : .
+        dockerfile: DockerFile
+      volumes:
+        - ./app:/app
+      enviroment:
+        DB_HOST: postgres
+        DB_NAME: leads_rd
+        DB_USER: root
+        DB_PASSWORD: root
+      working_dir : /app
