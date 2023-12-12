@@ -2,9 +2,9 @@ services:
   pgdatabase:
     image: postgres:13
     environment:
-      - POSTGRES_USER = root
-      - POSTGRES_PASSWORD = root
-      - POSTGRES_DB = leads_rd
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=leads_rd
     volumes:
       - postgres_data:/var/lib/postgres/data
 
@@ -22,22 +22,25 @@ services:
       - 8081:80
   jenkins:
     image: jenkins/jenkins:lts
-    privileged: true
-    user: root
+
     ports:
       - 8080:8080
-      - 50000:50000
+
     volumes:
       - jenkins_home:/var/jenkins_home
-    python_app:
-      build:
-        context : .
-        dockerfile: DockerFile
-      volumes:
-        - ./app:/app
-      enviroment:
-        DB_HOST: postgres
-        DB_NAME: leads_rd
-        DB_USER: root
-        DB_PASSWORD: root
-      working_dir : /app
+  python_app:
+    build:
+      context : .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    environment:
+      - DB_HOST= postgres
+      - DB_NAME= leads_rd
+      - DB_USER= root
+      - DB_PASSWORD= root
+    working_dir : /app
+
+volumes:
+  jenkins_home:
+  postgres_data:
