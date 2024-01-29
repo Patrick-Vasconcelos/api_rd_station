@@ -2,14 +2,12 @@ import requests
 import logging
 import pandas as pd
 import pyodbc
-from sqlalchemy import create_engine
 import pandas.io.sql as psql
 from dotenv import load_dotenv
 from os import getenv
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import time
 
 
 # configurando os loggers
@@ -148,7 +146,7 @@ class ApiRd:
 
             erro_msg = f"Erro ao conectar ao banco de dados : {str(e)}"
             db_logger.error(erro_msg)
-            self.envia_email_erro(mensagem=erro_msg)
+            # self.envia_email_erro(mensagem=erro_msg)
 
 
         try:
