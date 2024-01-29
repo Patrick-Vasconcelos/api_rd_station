@@ -1,9 +1,9 @@
-from api import PutDeals
+from api import ApiRd
+
 
 def main():
-    print("Funciona")
-    # PutDeals.put_list(PutDeals)
-    # PutDeals.get_list(PutDeals)
+    api = ApiRd()
+    api.put_list()
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,8 @@
 import requests
-from abc import abstractmethod, ABC
 import logging
 import pandas as pd
 import pyodbc
+from sqlalchemy import create_engine
 import pandas.io.sql as psql
 from dotenv import load_dotenv
 from os import getenv
@@ -31,65 +31,24 @@ SMTP_PASSWORD = ''
 TO_EMAIL = 'patrickvasc@qorpo.com.br'
 FROM_EMAIL = '89patrick89@gmail.com'
 
+load_dotenv(r'C:\Users\USER\.env.txt')
 
-def import_query(path):
-    with open(path, 'r') as open_file:
-        return open_file.read() 
-    
-
-class Rd_api(ABC):
+class ApiRd:
 
     def __init__(self) -> None:
-        super().__init__()
-        self.base_endpoint = "https://crm.rdstation.com/api/v1"
-    
+       self.base_endpoint = "https://crm.rdstation.com/api/v1"
+       self.token = getenv('token_rd')
+       self.usuario = getenv('usuario_DW')
+       self.senha = getenv('senha_DW')
+       self.nome_query = 'Ingestao_RD'
+       
 
-    def _get_base_endpoint(self, **kwargs) -> str:
-        self.base_endpoint = "https://crm.rdstation.com/api/v1"
+    def import_query(self,path):
+        with open(path, 'r') as open_file:
+            query = open_file.read()
+        return query   
 
-        return self.base_endpoint
-
-    @abstractmethod
-    def _get_endpoint(self, **kwargs) -> str: 
-        pass
-
-    def get_token(self,**kwargs) -> str:
-        with open('token.txt', 'r') as file:
-            token = file.read()
-
-        return token
-
-class GetDeals(Rd_api):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    
-    
-    def _get_endpoint(self) -> str:
-        token = self.get_token()
-        return f"{self.base_endpoint}/deals/?token={token}"
-
-    
-    def get_data(self, **kwargs) -> dict:
-        endpoint = self._get_endpoint(**kwargs)
-        api_logger.info(f"Getting data from endpoint: {endpoint}")
-        
-        headers = {
-        "accept": "application/json"
-        }
-
-        response = requests.request("GET", endpoint, headers=headers)
-        response = response.json()
-        response = pd.json_normalize(response)
-        print(response['deals'])
-
-class PutDeals(Rd_api):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def envia_email_erro(mensagem):
+    def envia_email_erro(self,mensagem):
         subject = "Erro na ingestão de dados"
         message = MIMEMultipart()
         message['From'] = FROM_EMAIL
@@ -107,9 +66,7 @@ class PutDeals(Rd_api):
             api_logger.error(f"Erro ao enviar e-mail de erro: {str(e)}")
 
     def _get_endpoint(self) -> str:
-        token = self.get_token(self)
-        endpoint = self._get_base_endpoint(self)
-        return f"{endpoint}/deals/?token={token}"
+        return f"{self.base_endpoint}/deals/?token={self.token}"
     
     def put_data(self,nome_paciente, value_indicacao,data_indicacao, value_sexo, value_data_nascimento_txt, value_contato, value_quadro_clinico,
                     label_sexo : str = "64e63eac51f84c0018a09ac6", label_indicacao : str = "64e4c19a2c71dd000e03ead5",
@@ -174,63 +131,81 @@ class PutDeals(Rd_api):
         try:
             api_logger.info("Tentando incluir os dados via api...")
             api_logger.info(f"Tentando incluir paciente {nome_paciente}")
-            response = requests.post(url=endpoint, json=payload, headers=headers)
+            requests.post(url=endpoint, json=payload, headers=headers)
             api_logger.info("Sucesso em incluir os dados via api!")
         except Exception as e:
             api_logger.error(f"Erro ao incluir os dados via api : {str(e)}")
 
-    def get_list(self, **kwargs):
-        nome = 'Ingestao_RD'
-    
-        env = load_dotenv(r'C:\Users\USER\.env.txt')
-
-        usuario = getenv('usuario_DW')
-        senha = getenv('senha_DW')
-
+    def get_list(self):
+        
         try:
-            usuario = 'bug'
+
             db_logger.info("Tentando conectar ao banco...")
-            conexao, cursor = self.conecta_ao_banco(username=usuario,password=senha)
+            conexao = self.conecta_ao_banco(username=self.usuario,password=self.senha)
             db_logger.info("Sucesso ao conectar ao banco de dados!")
+
         except Exception as e:
+
             erro_msg = f"Erro ao conectar ao banco de dados : {str(e)}"
             db_logger.error(erro_msg)
             self.envia_email_erro(mensagem=erro_msg)
 
 
         try:
+            
             db_logger.info("Realizando consulta ao banco..")
-            consulta = self.consulta_ao_banco(query=nome, conexao=conexao)
+            consulta = self.consulta_ao_banco(query=self.nome_query, conexao=conexao)
             db_logger.info("Sucesso ao fazer a consulta!")
         except Exception as e:
             db_logger.error(f"Erro ao realizar a consulta no banco : {str(e)}")
 
+        try:
+            conexao.close()
+        except Exception as e:
+            db_logger.error(f"erro ao fechar a conexao")
 
-        conexao.close()
-
-        return consulta
+        try:
+            return consulta
+        except Exception as e:
+            db_logger.error(f"erro ao retornar a consulta")
+            pass
     
-    def put_list(self, **kwargs):
-        list_deals = self.get_list(self)
+    def put_list(self):
+        db_logger.info("buscando lista de paciente...")
+        list_deals = self.get_list()
+        db_logger.info(f"lista com {len(list_deals)} pacientes")
 
         for i, deal in list_deals.iterrows():
+            print("entrando na lista de paciente")
             self.put_data(self,nome_paciente=deal['Paciente'], value_indicacao= deal['Nome'],data_indicacao= deal['DataIndicacao'],
                             value_sexo=deal['Sexo'],value_data_nascimento_txt=deal['DataNascimento'],value_contato=deal['Contato'],value_quadro_clinico=deal['Indicacao']
                             )
     
     def conecta_ao_banco(driver= 'ODBC Driver 17 for SQL Server', server= '192.168.10.63', database = 'SISAC', username=None,password=None,trusted_connection='no'):
 
-        string_conexao = f"DRIVER={driver};SERVER={server};DATABASE={database};ENCRYPT=no;UID={username};PWD={password};TRUSTED_CONNECTION={trusted_connection}"
+        string_conexao = f"DRIVER=ODBC Driver 17 for SQL Server;SERVER={server};DATABASE={database};ENCRYPT=no;UID={username};PWD={password};TRUSTED_CONNECTION={trusted_connection}"
         
+        print (string_conexao)
         conexao = pyodbc.connect(string_conexao)
-        cursor = conexao.cursor()
 
-        return conexao, cursor
+        return conexao
     
-    def consulta_ao_banco(query,conexao):
+    def consulta_ao_banco(self,query,conexao):
 
-        query = import_query(f'querys/{query}.sql')
-
-        df = psql.read_sql(query,conexao)
+        str_query = self.import_query(f'app/querys/{query}.sql')
+        df = psql.read_sql(str_query,conexao)
 
         return df
+    
+    def get_data(self) -> dict:
+        endpoint = self._get_endpoint()
+        api_logger.info(f"Getting data from endpoint: {endpoint}")
+        
+        headers = {
+        "accept": "application/json"
+        }
+
+        response = requests.request("GET", endpoint, headers=headers)
+        response = response.json()
+        response = pd.json_normalize(response)
+        print(response['deals'])
