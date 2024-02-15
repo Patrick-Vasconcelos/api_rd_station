@@ -73,7 +73,7 @@ class ApiRd:
                     value_data_nascimento_txt,
                     value_contato,
                     value_quadro_clinico,
-                    label_sexo : str = "64e63eac51f84c0018a09ac6",
+                    label_sexo : str = "64eself,63eac51f84c0018a09ac6",
                     label_indicacao : str = "64e4c19a2c71dd000e03ead5",
                     label_data_indicacao : str = "64e4abda173a72001acc99ff",
                     label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" ,
@@ -173,13 +173,13 @@ class ApiRd:
             db_logger.info(f"lista com {len(list_deals)} pacientes")
 
             for index,deal in list_deals.iterrows():
-                self.put_data(self,nome_paciente = deal['Paciente'],
-                                   value_indicacao= deal['Nome'],
-                                   data_indicacao= deal['DataIndicacao'],
-                                   value_sexo=deal['Sexo'],
-                                   value_data_nascimento_txt=deal['DataNascimento'],
-                                   value_contato=deal['Contato'],
-                                   value_quadro_clinico=deal['Indicacao']
+                self.put_data(nome_paciente = deal['Paciente'],
+                                value_indicacao = deal['Nome'],
+                                data_indicacao = deal['DataIndicacao'],
+                                value_sexo = deal['Sexo'],
+                                value_data_nascimento_txt = deal['DataNascimento'],
+                                value_contato = deal['Contato'],
+                                value_quadro_clinico = deal['Indicacao']
                                 )
     
     def conecta_ao_banco(driver= 'ODBC Driver 17 for SQL Server', server= '192.168.10.63', database = 'SISAC', username=None,password=None,trusted_connection='no'):
@@ -198,6 +198,7 @@ class ApiRd:
         return df
     
     def get_data(self) -> dict:
+    
         endpoint = self._get_endpoint()
         api_logger.info(f"Getting data from endpoint: {endpoint}")
         
