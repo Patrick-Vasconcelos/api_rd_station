@@ -1,5 +1,6 @@
-venv
+.venv
 token.txt
 __pycache__/
 ingestao.log
 jenkins_home
+log_do_cron.log

@@ -29,7 +29,7 @@ SMTP_PASSWORD = ''
 TO_EMAIL = 'patrickvasc@qorpo.com.br'
 FROM_EMAIL = '89patrick89@gmail.com'
 
-load_dotenv(r'C:\Users\USER\.env.txt')
+load_dotenv('/home/bi_qorpo/Documentos/.env.txt')
 
 class ApiRd:
 
@@ -40,7 +40,6 @@ class ApiRd:
        self.senha = getenv('senha_DW')
        self.nome_query = 'Ingestao_RD'
        
-
     def import_query(self,path):
         with open(path, 'r') as open_file:
             query = open_file.read()
@@ -66,27 +65,23 @@ class ApiRd:
     def _get_endpoint(self) -> str:
         return f"{self.base_endpoint}/deals/?token={self.token}"
     
-    def put_data(self,nome_paciente, value_indicacao,data_indicacao, value_sexo, value_data_nascimento_txt, value_contato, value_quadro_clinico,
-                    label_sexo : str = "64e63eac51f84c0018a09ac6", label_indicacao : str = "64e4c19a2c71dd000e03ead5",
-                    label_data_indicacao : str = "64e4abda173a72001acc99ff", label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" ,
-                    label_data_nascimento : str = "6514767ee1a4fd0011ddb4ed", label_contato : str = "651476a6ff79ae002289cd94",
-                    label_quadro_clinico : str = "64e4c23367bd0f000d23bdee" , **kwargs) -> None:
+    def put_data(self,
+                    nome_paciente,
+                    value_indicacao,
+                    data_indicacao,
+                    value_sexo,
+                    value_data_nascimento_txt,
+                    value_contato,
+                    value_quadro_clinico,
+                    label_sexo : str = "64e63eac51f84c0018a09ac6",
+                    label_indicacao : str = "64e4c19a2c71dd000e03ead5",
+                    label_data_indicacao : str = "64e4abda173a72001acc99ff",
+                    label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" ,
+                    label_data_nascimento : str = "6514767ee1a4fd0011ddb4ed",
+                    label_contato : str = "651476a6ff79ae002289cd94",
+                    label_quadro_clinico : str = "64e4c23367bd0f000d23bdee") -> None:
         
-        endpoint = self._get_endpoint(self,**kwargs)
-        
-        self.value_data_nascimento_txt = value_data_nascimento_txt
-        self.label_fase_lead = label_fase_lead
-        self.label_indicacao = label_indicacao
-        self.label_quadro_clinico = label_quadro_clinico
-        self.value_quadro_clinico = value_quadro_clinico
-        self.value_indicacao = value_indicacao
-        self.label_data_indicacao = label_data_indicacao
-        self.data_indicacao = data_indicacao
-        self.nome_paciente = nome_paciente
-        self.value_contato = value_contato
-        self.value_sexo = value_sexo
-        self.label_sexo = label_sexo
-
+        endpoint = self._get_endpoint(self)
     
         payload = { "deal": {
         "deal_custom_fields": [
@@ -166,31 +161,38 @@ class ApiRd:
             return consulta
         except Exception as e:
             db_logger.error(f"erro ao retornar a consulta")
-            pass
+            return []         
     
     def put_list(self):
         db_logger.info("buscando lista de paciente...")
-        list_deals = self.get_list()
-        db_logger.info(f"lista com {len(list_deals)} pacientes")
 
-        for i, deal in list_deals.iterrows():
-            print("entrando na lista de paciente")
-            self.put_data(self,nome_paciente=deal['Paciente'], value_indicacao= deal['Nome'],data_indicacao= deal['DataIndicacao'],
-                            value_sexo=deal['Sexo'],value_data_nascimento_txt=deal['DataNascimento'],value_contato=deal['Contato'],value_quadro_clinico=deal['Indicacao']
-                            )
+        list_deals = self.get_list()
+        if list_deals.empty:
+            db_logger.info(f"Lista de pacientes vazia!")
+        else:
+            db_logger.info(f"lista com {len(list_deals)} pacientes")
+
+            for index,deal in list_deals.iterrows():
+                self.put_data(self,nome_paciente = deal['Paciente'],
+                                   value_indicacao= deal['Nome'],
+                                   data_indicacao= deal['DataIndicacao'],
+                                   value_sexo=deal['Sexo'],
+                                   value_data_nascimento_txt=deal['DataNascimento'],
+                                   value_contato=deal['Contato'],
+                                   value_quadro_clinico=deal['Indicacao']
+                                )
     
     def conecta_ao_banco(driver= 'ODBC Driver 17 for SQL Server', server= '192.168.10.63', database = 'SISAC', username=None,password=None,trusted_connection='no'):
 
         string_conexao = f"DRIVER=ODBC Driver 17 for SQL Server;SERVER={server};DATABASE={database};ENCRYPT=no;UID={username};PWD={password};TRUSTED_CONNECTION={trusted_connection}"
         
-        print (string_conexao)
         conexao = pyodbc.connect(string_conexao)
 
         return conexao
     
     def consulta_ao_banco(self,query,conexao):
 
-        str_query = self.import_query(f'app/querys/{query}.sql')
+        str_query = self.import_query(f'/home/bi_qorpo/Documentos/projetos/api_rd_station/app/querys/{query}.sql')
         df = psql.read_sql(str_query,conexao)
 
         return df

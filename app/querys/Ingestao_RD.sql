@@ -34,5 +34,6 @@ LEFT JOIN sisac.dbo.CadMedico as medico ON indicacao.CodMedico = medico.CodMedic
  -- DATEADD(DAY, -1, CAST(GETDATE() AS DATE))
  --      AND DataIndicacao < CAST(GETDATE() AS DATE)
 
+-- WHERE DataIndicacao = '2024-28-01'
 
 WHERE DataIndicacao >= CAST(DATEADD(DAY, -1, GETDATE()) AS DATE) AND  DataIndicacao < CAST(GETDATE() AS DATE)
