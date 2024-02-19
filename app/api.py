@@ -8,6 +8,8 @@ from os import getenv
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import date, timedelta
+import warnings
 
 
 # configurando os loggers
@@ -19,6 +21,7 @@ db_logger.addHandler(file_handler)
 db_logger.addHandler(console_handler)
 api_logger.addHandler(file_handler)
 api_logger.addHandler(console_handler)
+warnings.filterwarnings("ignore", category=UserWarning)
 logging.basicConfig(filename='ingestao.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 #configurando o envio de email
@@ -39,6 +42,8 @@ class ApiRd:
        self.usuario = getenv('usuario_DW')
        self.senha = getenv('senha_DW')
        self.nome_query = 'Ingestao_RD'
+       self.hoje = date.today()
+       self.ontem = self.hoje - timedelta(days=1)
        
     def import_query(self,path):
         with open(path, 'r') as open_file:
@@ -63,7 +68,7 @@ class ApiRd:
             api_logger.error(f"Erro ao enviar e-mail de erro: {str(e)}")
 
     def _get_endpoint(self) -> str:
-        return f"{self.base_endpoint}/deals/?token={self.token}"
+        return f"{self.base_endpoint}/deals?token={self.token}"
     
     def put_data(self,
                     nome_paciente,
@@ -73,7 +78,7 @@ class ApiRd:
                     value_data_nascimento_txt,
                     value_contato,
                     value_quadro_clinico,
-                    label_sexo : str = "64eself,63eac51f84c0018a09ac6",
+                    label_sexo : str = "64e63eac51f84c0018a09ac6",
                     label_indicacao : str = "64e4c19a2c71dd000e03ead5",
                     label_data_indicacao : str = "64e4abda173a72001acc99ff",
                     label_fase_lead : str = "64b13bb2ebfad3000d22bdfe" ,
@@ -81,7 +86,7 @@ class ApiRd:
                     label_contato : str = "651476a6ff79ae002289cd94",
                     label_quadro_clinico : str = "64e4c23367bd0f000d23bdee") -> None:
         
-        endpoint = self._get_endpoint(self)
+        endpoint = self._get_endpoint()
     
         payload = { "deal": {
         "deal_custom_fields": [
@@ -113,7 +118,6 @@ class ApiRd:
         "deal_stage_id": f"{label_fase_lead}",
         "name": f"{nome_paciente}"
         }
-
         }
         
         headers = {
@@ -124,8 +128,11 @@ class ApiRd:
         try:
             api_logger.info("Tentando incluir os dados via api...")
             api_logger.info(f"Tentando incluir paciente {nome_paciente}")
-            requests.post(url=endpoint, json=payload, headers=headers)
-            api_logger.info("Sucesso em incluir os dados via api!")
+            response = requests.post(url=endpoint, json=payload, headers=headers)
+            if response.status_code == 200:
+                api_logger.info("Sucesso ao incluir os dados do paciente")
+            else:
+                api_logger.info(f"Erro na insercao.. {response.text}")
         except Exception as e:
             api_logger.error(f"Erro ao incluir os dados via api : {str(e)}")
 
@@ -164,6 +171,8 @@ class ApiRd:
             return []         
     
     def put_list(self):
+        
+        db_logger.info(f"Iniciando ingestao do dia {self.hoje}, ingerindo dados de indicação do dia {self.ontem}")
         db_logger.info("buscando lista de paciente...")
 
         list_deals = self.get_list()
