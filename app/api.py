@@ -179,17 +179,23 @@ class ApiRd:
         if list_deals.empty:
             db_logger.info(f"Lista de pacientes vazia!")
         else:
-            db_logger.info(f"lista com {len(list_deals)} pacientes")
-
-            for index,deal in list_deals.iterrows():
-                self.put_data(nome_paciente = deal['Paciente'],
-                                value_indicacao = deal['Nome'],
-                                data_indicacao = deal['DataIndicacao'],
-                                value_sexo = deal['Sexo'],
-                                value_data_nascimento_txt = deal['DataNascimento'],
-                                value_contato = deal['Contato'],
-                                value_quadro_clinico = deal['Indicacao']
-                                )
+            db_logger.info(f"lista antes da unificacao, possui {len(list_deals)} pacientes")
+            db_logger.info(f"Unificando lista, limpando duplicatas...")
+            try:
+                lista_unificada = self.unifica_deals(list_deals)
+                db_logger.info(f"lista unificada com {len(lista_unificada)} pacientes")
+            
+                for index,deal in lista_unificada.iterrows(): 
+                    self.put_data(nome_paciente = deal['Paciente'].strip(),
+                                    value_indicacao = deal['Nome'].strip(),
+                                    data_indicacao = deal['DataIndicacao'],
+                                    value_sexo = deal['Sexo'],
+                                    value_data_nascimento_txt = deal['DataNascimento'],
+                                    value_contato = deal['Contato'],
+                                    value_quadro_clinico = deal['Indicacao']
+                    )
+            except Exception as e:
+                db_logger.error(f"Erro na criacao da lista unificada: {str(e)}")
     
     def conecta_ao_banco(driver= 'ODBC Driver 17 for SQL Server', server= '192.168.10.63', database = 'SISAC', username=None,password=None,trusted_connection='no'):
 
@@ -207,6 +213,7 @@ class ApiRd:
         return df
     
     def get_data(self) -> dict:
+
     
         endpoint = self._get_endpoint()
         api_logger.info(f"Getting data from endpoint: {endpoint}")
@@ -219,3 +226,15 @@ class ApiRd:
         response = response.json()
         response = pd.json_normalize(response)
         print(response['deals'])
+    
+    def unifica_deals(self,list_deals):
+        deals_unificadas = list_deals.groupby('Paciente').agg({
+            'Nome' : 'first',
+            'DataIndicacao' : 'first',
+            'Sexo' : 'first',
+            'DataNascimento': 'first',
+            'Contato': 'first',
+            'Indicacao': 'first'                                                     
+        }).reset_index()
+
+        return deals_unificadas
